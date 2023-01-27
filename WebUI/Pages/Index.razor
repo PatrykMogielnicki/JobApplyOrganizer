@@ -1,0 +1,141 @@
+﻿@page "/"
+@using Application.Zadanie.Interface
+@using Application.Zadanie.Model
+@using Domain.Entities
+@using Domain.Enums;
+@inject IZadanieService cvService
+
+<style>
+.openList{
+    display:block;
+}
+.closeList{
+    display:none;
+}
+.zrobione{
+    text-decoration-line:line-through;
+}
+</style>
+
+<PageTitle>TaskListy</PageTitle>
+
+    <main>
+        <div class="top-row px-4" style="flex:2">
+            <div>
+                <EditForm Model="@formEmptyZadanieModel" OnValidSubmit="@TestLog" id="taskForm">
+                <DataAnnotationsValidator />
+                <ValidationSummary/>
+                <InputText @bind-Value="formEmptyZadanieModel.Name" id="taskNameInput"/>
+                <InputSelect @bind-Value="formEmptyZadanieModel.Stan">
+                                @foreach (Enum element in Enum.GetValues(typeof(Stage)))
+                                {
+                                    <option value="@element">@element.ToString()</option>
+                                }
+                </InputSelect>
+                <InputFile OnChange="@UploadFile"/>
+                <button type="submit">+</button>
+            </EditForm>
+            </div>
+            
+        </div>
+
+        <article class="content px-4">
+        @foreach (Stage stage in (Stage[])Enum.GetValues(typeof(Stage)))
+        {
+            <div>
+                <h3 style="text-align:center;">@stage</h3>
+                @foreach (Zadanie line in cvService.GetAll())
+                {
+                    @if(line.Stan == stage)
+                    {
+                        <EditForm Model="line">
+                            <InputText @bind-Value="line.Name"/>
+                            <InputSelect @bind-Value="line.Stan">
+                                @foreach (Enum element in Enum.GetValues(typeof(Stage)))
+                                {
+                                    <option value="@element">@element.ToString()</option>
+                                }
+                            </InputSelect>
+                            <InputTextArea @bind-Value="line.Description"/>
+                            | @line.Date.First() | <a target="_blank" href="Pliki/@line.FileName">@line.FileName</a>
+                            <button type="button" @onclick="ReRenderView">Save</button>
+                        </EditForm>
+                    }
+                }
+            </div>
+            <hr/>
+        }
+        </article>
+    </main>
+
+@code {
+    private async Task UploadFile(InputFileChangeEventArgs e)
+    {
+        long maxAllowedSize = 1024 * 1024 * 15;
+        var path =  "Pliki" + Path.DirectorySeparatorChar + e.File.Name;        
+        await using FileStream fs = new(path, FileMode.Create);
+        await e.File.OpenReadStream(maxAllowedSize).CopyToAsync(fs);
+        formEmptyZadanieModel.FileLink = e.File.Name;
+    }
+
+    private Dictionary<string, string> listOption = new();
+    private string NewListName = "nowa_lista";
+    private ZadanieModel formEmptyZadanieModel = new();
+
+    private bool collapseNavMenu = true;
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+    private string? InvisibleForm = "invizible";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        cvService.Load();
+    }
+
+    private void TestLog()
+    {
+        formEmptyZadanieModel.Date.Add(DateTime.Now);
+        cvService.Create(formEmptyZadanieModel);
+        formEmptyZadanieModel = new();
+        ReRenderView();
+    }
+
+    private void delTask(Zadanie zadanie)
+    {
+        cvService.Delete(zadanie);
+        ReRenderView();
+    }
+
+    private void checkTask(Zadanie zadanie)
+    {
+        zadanie.Checked = (zadanie.Checked == 0) ? 1 : 0;
+        ReRenderView();
+    }
+
+    private void ReRenderView()
+    {
+        cvService.Save();
+        StateHasChanged();
+    }
+
+    private void InputNewList(){
+        InvisibleForm = null;
+    }
+
+    private void ListOptionCloseOpen(string name)
+    {
+        if(listOption[name] == "openList")
+        {
+            listOption[name] = "closeList";
+        }
+        else
+        {
+            listOption[name] = "openList";
+        }
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+}
