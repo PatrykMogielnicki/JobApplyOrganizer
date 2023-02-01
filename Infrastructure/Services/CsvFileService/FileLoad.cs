@@ -4,26 +4,37 @@ namespace Infrastructure.Services.CsvFileService
 {
     public class FileLoad : IFileLoad
     {
-        public List<string> Load(string fileName)
+        private StreamReader FileOpenOrCreateAndOpen(string fileName)
         {
-            List<string> list = new List<string>();
             if (!File.Exists(fileName))
             {
                 var creater = File.CreateText(fileName);
                 creater.Close();
             }
             StreamReader file = File.OpenText(fileName);
-            while (file.EndOfStream == false)
+            return file;
+        }
+
+        private List<string> ReadTextFileToList(StreamReader stream)
+        {
+            List<string> list = new List<string>();
+            while (stream.EndOfStream == false)
             {
-                string line = file.ReadLine();
+                string line = stream.ReadLine();
                 if (line == null || line == string.Empty)
                 {
                     break;
                 }
                 list.Add(line);
             }
-            file.Close();
             return list;
+        }
+        public List<string> Load(string fileName)
+        {
+            StreamReader file = FileOpenOrCreateAndOpen(fileName);
+            List<string> result = ReadTextFileToList(file);
+            file.Close();
+            return result;
         }
     }
 }

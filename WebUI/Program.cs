@@ -1,6 +1,7 @@
+using Application;
+using Infrastructure;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.FileProviders;
-using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,14 +13,6 @@ builder.Services.AddAplicationServices();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    // app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    //app.UseHsts();
-}
-
 app.UseForwardedHeaders(new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
@@ -29,29 +22,25 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-
-var path = Path.Combine(app.Environment.ContentRootPath, "Pliki");
-if (!Directory.Exists(path))
+//TODO move to config file
+List<string> AdditionalDirectories = new List<string>()
 {
-    Directory.CreateDirectory(path);
-}
+    "JobOfferPhoto","CsvFiles"
+};
 
-app.UseStaticFiles(new StaticFileOptions
+AdditionalDirectories.ForEach(directory =>
 {
-    FileProvider = new PhysicalFileProvider(path),
-    RequestPath = "/Pliki"
-});
+    var path = Path.Combine(app.Environment.ContentRootPath, directory);
+    if (!Directory.Exists(path))
+    {
+        Directory.CreateDirectory(path);
+    }
 
-var path2 = Path.Combine(app.Environment.ContentRootPath, "Listy");
-if (!Directory.Exists(path2))
-{
-    Directory.CreateDirectory(path2);
-}
-
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(path2),
-    RequestPath = "/Listy"
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(path),
+        RequestPath = "/" + directory
+    });
 });
 
 app.UseRouting();

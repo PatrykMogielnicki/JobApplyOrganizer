@@ -188,3 +188,14 @@ main {
     }
 }
 
+.openList {
+    display: block;
+}
+
+.closeList {
+    display: none;
+}
+
+.zrobione {
+    text-decoration-line: line-through;
+}

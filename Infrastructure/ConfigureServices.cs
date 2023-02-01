@@ -1,10 +1,11 @@
-﻿using Application.Zadanie.Interface;
+﻿using Application.JobService.Interface;
 using Infrastructure.Adapters;
 using Infrastructure.Services.CsvFileService;
 using Infrastructure.Services.CsvFileService.Interface;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
-namespace Microsoft.Extensions.DependencyInjection;
+namespace Infrastructure;
 
 public static class ConfigureServices
 {
@@ -14,8 +15,8 @@ public static class ConfigureServices
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
         services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-        services.AddSingleton<IZadanieLoad, CsvFileServiceToZadanieLoadAdapter>();
-        services.AddSingleton<IZadanieSave, CsvFileServiceToZadanieSaveAdapter>();
+        services.AddSingleton<IJobApplyLoad, CsvFileServiceToJobApplyLoad>();
+        services.AddSingleton<IJobApplySave, CsvFileServiceToJobApplySave>();
         services.AddSingleton<IFileLoad, FileLoad>();
         services.AddSingleton<IFileSave, FileSave>();
 

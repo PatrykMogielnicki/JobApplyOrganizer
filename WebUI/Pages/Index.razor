@@ -1,42 +1,28 @@
 ﻿@page "/"
-@using Application.Zadanie.Interface
-@using Application.Zadanie.Model
 @using Domain.Entities
+@using Domain.Entities.Interfaces;
 @using Domain.Enums;
-@inject IZadanieService cvService
+@using Application.JobService.Interface;
+@using Application.JobService.Model;
+@inject IJobApplyService service
 
-<style>
-.openList{
-    display:block;
-}
-.closeList{
-    display:none;
-}
-.zrobione{
-    text-decoration-line:line-through;
-}
-</style>
-
-<PageTitle>TaskListy</PageTitle>
+<PageTitle>JobApplyOrganizer</PageTitle>
 
     <main>
         <div class="top-row px-4" style="flex:2">
-            <div>
-                <EditForm Model="@formEmptyZadanieModel" OnValidSubmit="@TestLog" id="taskForm">
+            <EditForm Model="@formModel" OnValidSubmit="@Add" id="taskForm">
                 <DataAnnotationsValidator />
                 <ValidationSummary/>
-                <InputText @bind-Value="formEmptyZadanieModel.Name" id="taskNameInput"/>
-                <InputSelect @bind-Value="formEmptyZadanieModel.Stan">
-                                @foreach (Enum element in Enum.GetValues(typeof(Stage)))
-                                {
-                                    <option value="@element">@element.ToString()</option>
-                                }
-                </InputSelect>
-                <InputFile OnChange="@UploadFile"/>
-                <button type="submit">+</button>
+                <InputText @bind-Value="formModel.Name" id="taskNameInput" />
+                <InputSelect @bind-Value="formModel.Stan">
+                                    @foreach (Enum element in Enum.GetValues(typeof(Stage)))
+                                    {
+                                        <option value="@element">@element.ToString()</option>
+                                    }
+                    </InputSelect>
+                    <InputFile OnChange="@UploadFile"/>
+                    <button type="submit">+</button>
             </EditForm>
-            </div>
-            
         </div>
 
         <article class="content px-4">
@@ -44,7 +30,7 @@
         {
             <div>
                 <h3 style="text-align:center;">@stage</h3>
-                @foreach (Zadanie line in cvService.GetAll())
+                @foreach (IJobApply line in service.GetAll())
                 {
                     @if(line.Stan == stage)
                     {
@@ -57,7 +43,7 @@
                                 }
                             </InputSelect>
                             <InputTextArea @bind-Value="line.Description"/>
-                            | @line.Date.First() | <a target="_blank" href="Pliki/@line.FileName">@line.FileName</a>
+                            | @line.Date | <a target="_blank" href="@photoDirectory/@line.FileName">@line.FileName</a>
                             <button type="button" @onclick="ReRenderView">Save</button>
                         </EditForm>
                     }
@@ -69,73 +55,37 @@
     </main>
 
 @code {
-    private async Task UploadFile(InputFileChangeEventArgs e)
-    {
-        long maxAllowedSize = 1024 * 1024 * 15;
-        var path =  "Pliki" + Path.DirectorySeparatorChar + e.File.Name;        
-        await using FileStream fs = new(path, FileMode.Create);
-        await e.File.OpenReadStream(maxAllowedSize).CopyToAsync(fs);
-        formEmptyZadanieModel.FileLink = e.File.Name;
-    }
-
-    private Dictionary<string, string> listOption = new();
-    private string NewListName = "nowa_lista";
-    private ZadanieModel formEmptyZadanieModel = new();
-
-    private bool collapseNavMenu = true;
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-    private string? InvisibleForm = "invizible";
-
+    private JobApplyModel formModel = new();
+    private long _maxAllowedSize = 1024 * 1024 * 15;
+    private string photoDirectory = "JobOfferPhoto";
 
     protected override async Task OnInitializedAsync()
     {
-        cvService.Load();
+        service.Load();
     }
 
-    private void TestLog()
+    private async Task UploadFile(InputFileChangeEventArgs e)
     {
-        formEmptyZadanieModel.Date.Add(DateTime.Now);
-        cvService.Create(formEmptyZadanieModel);
-        formEmptyZadanieModel = new();
-        ReRenderView();
+        //TODO get directory name from config
+        await using FileStream fs = new(
+            photoDirectory + Path.DirectorySeparatorChar + e.File.Name,
+            FileMode.Create
+        );
+        await e.File.OpenReadStream(_maxAllowedSize).CopyToAsync(fs);
+        formModel.FileLink = e.File.Name;
     }
 
-    private void delTask(Zadanie zadanie)
+    private void Add()
     {
-        cvService.Delete(zadanie);
-        ReRenderView();
-    }
-
-    private void checkTask(Zadanie zadanie)
-    {
-        zadanie.Checked = (zadanie.Checked == 0) ? 1 : 0;
+        formModel.Date = DateTime.Now;
+        service.Create(formModel);
+        formModel = new();
         ReRenderView();
     }
 
     private void ReRenderView()
     {
-        cvService.Save();
+        service.Save();
         StateHasChanged();
-    }
-
-    private void InputNewList(){
-        InvisibleForm = null;
-    }
-
-    private void ListOptionCloseOpen(string name)
-    {
-        if(listOption[name] == "openList")
-        {
-            listOption[name] = "closeList";
-        }
-        else
-        {
-            listOption[name] = "openList";
-        }
-    }
-
-    private void ToggleNavMenu()
-    {
-        collapseNavMenu = !collapseNavMenu;
     }
 }

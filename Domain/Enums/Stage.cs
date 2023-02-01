@@ -2,6 +2,7 @@
 {
     public enum Stage
     {
+        //TODO change to english
         Wyslane_CV = 0,
         Pierwsza_Odpowiedz_Od_Firmy = 1,
         Umowiona_Rozmowa_Wstepna = 2,

@@ -1,1 +1,4 @@
-# OrganizerCV
+# JobApplyOrganizer
+###### Simply Blazor Server App written in Domain-driven design(DDD) to organize job applications with simple text notes function and photo attachment storage. 
+###### Disappearing offert, long time with no response and feeling "Have I read it before?" push my to create this app. Now in an easy way I can find information about the offer that I apply for and notes written during each step of the recruitment process without need to search through old mails.
+###### App can be hosted on any Web Server that support .NET 7.0, self-hosted  or used within a Docker container depending on your build configuration.
